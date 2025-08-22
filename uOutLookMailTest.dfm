@@ -36,24 +36,15 @@ object OutLookAzureTest: TOutLookAzureTest
     TabOrder = 0
     OnClick = AuthenticateClick
   end
-  object btnSendEmail: TButton
-    Left = 136
-    Top = 84
-    Width = 121
-    Height = 25
-    Caption = 'Send'
-    TabOrder = 1
-    OnClick = btnSendEmailClick
-  end
   object MemoLog: TMemo
-    Left = 288
+    Left = 304
     Top = 0
-    Width = 564
+    Width = 548
     Height = 272
     Align = alRight
     Lines.Strings = (
       '')
-    TabOrder = 2
+    TabOrder = 1
   end
   object OutlookMail1: TTMSFNCCloudMicrosoftOutlookMail
     Left = 167
@@ -64,7 +55,6 @@ object OutLookAzureTest: TOutLookAzureTest
     Logging = True
     Authentication.CallBackURL = 'http://localhost:8000'
     OnAuthenticated = OutlookMail1Authenticated
-    OnRequestComplete = OutlookMail1RequestComplete
     Mails = <>
     Folders = <>
   end
@@ -74,21 +64,47 @@ object OutLookAzureTest: TOutLookAzureTest
     Width = 108
     Height = 25
     Caption = 'Attracs Send'
-    TabOrder = 5
+    TabOrder = 4
     OnClick = ATSendClick
   end
   object txtFrom: TEdit
     Left = 42
     Top = 13
-    Width = 231
+    Width = 247
     Height = 23
-    TabOrder = 6
+    TabOrder = 5
   end
   object txtTo: TEdit
     Left = 42
     Top = 42
-    Width = 231
+    Width = 247
     Height = 23
+    TabOrder = 6
+  end
+  object grpSend: TGroupBox
+    Left = 135
+    Top = 84
+    Width = 154
+    Height = 95
+    Caption = 'Send'
     TabOrder = 7
+    object btnSendWithGraphApi: TButton
+      Left = 10
+      Top = 24
+      Width = 137
+      Height = 25
+      Caption = 'Send with Graph Api'
+      TabOrder = 0
+      OnClick = btnSendWithGraphApiClick
+    end
+    object btnSendCloudPack: TButton
+      Left = 10
+      Top = 55
+      Width = 137
+      Height = 25
+      Caption = 'Send with Cloudpack'
+      TabOrder = 1
+      OnClick = btnSendCloudPackClick
+    end
   end
 end

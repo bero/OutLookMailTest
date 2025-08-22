@@ -15,19 +15,22 @@ uses
 type
   TOutLookAzureTest = class(TForm)
     OutlookMail1: TTMSFNCCloudMicrosoftOutlookMail;
-    btnSendEmail: TButton;
     MemoLog: TMemo;
     ATSend: TButton;
     lblFrom: TLabel;
     lblTo: TLabel;
     txtFrom: TEdit;
     txtTo: TEdit;
+    grpSend: TGroupBox;
+    btnSendWithGraphApi: TButton;
+    btnSendCloudPack: TButton;
     procedure FormDestroy(Sender: TObject);
     procedure ATSendClick(Sender: TObject);
     procedure AuthenticateClick(Sender: TObject);
+    procedure btnSendCloudPackClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure OutlookMail1Error(Sender: TObject; AError: Exception);
-    procedure btnSendEmailClick(Sender: TObject);
+    procedure btnSendWithGraphApiClick(Sender: TObject);
     procedure OutlookMail1Authenticated(Sender: TObject; var ATestTokens: Boolean);
     procedure OutlookMail1RequestComplete(Sender: TObject; const ARequestResult: TTMSFNCCloudBaseRequestResult);
   private
@@ -62,7 +65,7 @@ begin
   txtTo.Text := FRecipientEmail;
   OutlookMail1.Authentication.ClientID := fInifile.ReadString('Mail', 'ClientID', '');
   OutlookMail1.Authentication.Secret := fInifile.ReadString('Mail', 'Secret', '');
-  btnSendEmail.Enabled := False;
+  btnSendWithGraphApi.Enabled := False;
 end;
 
 procedure TOutLookAzureTest.AuthenticateClick(Sender: TObject);
@@ -75,18 +78,19 @@ procedure TOutLookAzureTest.OutlookMail1Authenticated(Sender: TObject; var ATest
 begin
   // Access the AccessToken via the Authentication property
   FCurrentAccessToken := OutlookMail1.Authentication.AccessToken;
-  btnSendEmail.Enabled := True;
+  btnSendWithGraphApi.Enabled := True;
 
-  OutlookMail1.GetUserInfo;
+  OutlookMail1.OnRequestComplete := OutlookMail1RequestComplete;
+  OutlookMail1.GetUserInfo;   // This generate a new request
 end;
 
 procedure TOutLookAzureTest.OutlookMail1Error(Sender: TObject; AError: Exception);
 begin
   MemoLog.Lines.Add('Authentication Error: ' + AError.Message);
-  btnSendEmail.Enabled := False;
+  btnSendWithGraphApi.Enabled := False;
 end;
 
-procedure TOutLookAzureTest.btnSendEmailClick(Sender: TObject);
+procedure TOutLookAzureTest.btnSendWithGraphApiClick(Sender: TObject);
 var
   HttpClient: THTTPClient;
   MessagePayload: TJSONObject;
@@ -102,7 +106,7 @@ var
   HttpStatus: Integer;
   StringStream: TStringStream; // Variable for the stream
 begin
-  if not btnSendEmail.Enabled then
+  if not btnSendWithGraphApi.Enabled then
   begin
     MemoLog.Lines.Add('Please authenticate first.');
     Exit;
@@ -200,6 +204,11 @@ begin
 //
 end;
 
+procedure TOutLookAzureTest.btnSendCloudPackClick(Sender: TObject);
+begin
+//
+end;
+
 procedure TOutLookAzureTest.OutlookMail1RequestComplete(Sender: TObject; const
     ARequestResult: TTMSFNCCloudBaseRequestResult);
 var
@@ -207,6 +216,8 @@ var
   JSONObject: TJSONObject;
   mail: string;
 begin
+  OutlookMail1.OnRequestComplete := nil;
+
   if ARequestResult.Success then
   begin
     JSONValue := TJSONObject.ParseJSONValue(ARequestResult.ResultString);
@@ -215,7 +226,9 @@ begin
       begin
         JSONObject := TJSONObject(JSONValue);
         if JSONObject.TryGetValue<string>('mail', mail) then
-          MemoLog.Lines.Add('User mail: ' + mail)
+        begin
+          MemoLog.Lines.Add('Authentication success. User mail: ' + mail);
+        end
         else
           MemoLog.Lines.Add('mail not found');
       end

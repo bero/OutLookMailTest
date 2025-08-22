@@ -1,5 +1,6 @@
 program OutLookMailTest;
 
+// Change path for FastMM5 or FastMM4 do detect memleaks easier. Or just remove it and use builtin
 uses
   FastMM5 in '..\Attracs-Common\components\core\FastMM5.pas',
   Vcl.Forms,
