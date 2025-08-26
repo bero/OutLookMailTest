@@ -93,9 +93,9 @@ object OutLookAzureTest: TOutLookAzureTest
   object btnSendCloudPack: TButton
     Left = 8
     Top = 148
-    Width = 217
+    Width = 241
     Height = 25
-    Caption = 'Send with  CloudPack'
+    Caption = 'Send with personal mail and  CloudPack'
     Enabled = False
     TabOrder = 7
     OnClick = btnSendCloudPackClick

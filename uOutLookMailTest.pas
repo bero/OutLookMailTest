@@ -37,7 +37,6 @@ type
   private
     fInifile: TInifile;
     FCurrentAccessToken: string; // Store access token here
-  public
   end;
 
 var
@@ -48,6 +47,7 @@ implementation
 {$R *.dfm}
 
 uses
+  System.IOUtils,
   System.NetConsts;
 
 procedure TOutLookAzureTest.FormDestroy(Sender: TObject);
@@ -72,17 +72,40 @@ begin
 end;
 
 procedure TOutLookAzureTest.btnSendCloudPackClick(Sender: TObject);
+const
+  MaxFileSize = 3 * 1024 * 1024; // 3 MB
 var
-  sRecipients: TStringList;
+  sRecipients, AttachmentList: TStringList;
+  oAttachmentFileList: TTMSFNCCloudMicrosoftOutlookMailFiles;
 begin
   sRecipients := TStringList.Create;
+  AttachmentList := TStringList.Create;
+  oAttachmentFileList := TTMSFNCCloudMicrosoftOutlookMailFiles.Create(nil);
   try
     sRecipients.Add(txtFrom.Text);
+    var oAttachmentFile: TTMSFNCCloudMicrosoftOutlookMailFile;
+    var sFilePath: string;
+
+    AttachmentList.CommaText := 'C:\Attracs\BPL\AttracsComponentsXE12Athens.drc';
+    for sFilePath in AttachmentList do
+    begin
+      if not FileExists(sFilePath) then
+        raise Exception.Create('Attachment file not found: ' + sFilePath);
+
+      if TFile.GetSize(sFilePath) > MaxFileSize then
+        raise Exception.Create('Attachment exceeds 3 MB: ' + sFilePath);
+
+      oAttachmentFile := oAttachmentFileList.Add;
+      oAttachmentFile.&File := sFilePath;
+    end;
+
     OutlookMail1.SendMessage('Test Email from Delphi App (personal Mailbox)',
                              '<h1>Hello!</h1><p>This email was sent from <b>' + txtFrom.Text + '</b> using FNC CloudPack.</p><p>Sent at ' + DateTimeToStr(Now) + '</p>',
-                             sRecipients, nil, nil, mtHTML);
+                             sRecipients, nil, nil, mtHTML, oAttachmentFileList);
   finally
-    sRecipients.Free;
+    FreeAndNil(oAttachmentFileList);
+    FreeAndNil(AttachmentList);
+    FreeAndNil(sRecipients);
   end;
 end;
 
@@ -205,7 +228,7 @@ end;
 procedure TOutLookAzureTest.OutlookMail1Error(Sender: TObject; AError: Exception);
 begin
   MemoLog.Lines.Add('Authentication Error: ' + AError.Message);
-    btnSendCloudPack.Enabled := False;
+  btnSendCloudPack.Enabled := False;
   btnSendWithGraphAPI.Enabled := False;
 end;
 
