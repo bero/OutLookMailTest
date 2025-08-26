@@ -22,14 +22,21 @@ object OutLookAzureTest: TOutLookAzureTest
   end
   object lblTo: TLabel
     Left = 8
-    Top = 48
+    Top = 72
     Width = 12
     Height = 15
     Caption = 'To'
   end
+  object lblSharedMail: TLabel
+    Left = 8
+    Top = 40
+    Width = 62
+    Height = 15
+    Caption = 'Shared mail'
+  end
   object Authenticate: TButton
     Left = 8
-    Top = 84
+    Top = 116
     Width = 121
     Height = 25
     Caption = 'Authenticate'
@@ -58,53 +65,43 @@ object OutLookAzureTest: TOutLookAzureTest
     Mails = <>
     Folders = <>
   end
-  object ATSend: TButton
-    Left = 8
-    Top = 239
-    Width = 108
-    Height = 25
-    Caption = 'Attracs Send'
-    TabOrder = 4
-    OnClick = ATSendClick
-  end
   object txtFrom: TEdit
-    Left = 42
+    Left = 80
     Top = 13
-    Width = 247
+    Width = 200
+    Height = 23
+    TabOrder = 4
+  end
+  object txtTo: TEdit
+    Left = 80
+    Top = 66
+    Width = 200
     Height = 23
     TabOrder = 5
   end
-  object txtTo: TEdit
-    Left = 42
-    Top = 42
-    Width = 247
-    Height = 23
+  object btnSendWithGraphAPI: TButton
+    Left = 8
+    Top = 179
+    Width = 217
+    Height = 25
+    Caption = 'Send with Graph Api shared mailbox'
     TabOrder = 6
+    OnClick = btnSendWithGraphAPIClick
   end
-  object grpSend: TGroupBox
-    Left = 135
-    Top = 84
-    Width = 154
-    Height = 95
-    Caption = 'Send'
+  object btnSendCloudPack: TButton
+    Left = 8
+    Top = 148
+    Width = 217
+    Height = 25
+    Caption = 'Send with  CloudPack'
     TabOrder = 7
-    object btnSendWithGraphApi: TButton
-      Left = 10
-      Top = 24
-      Width = 137
-      Height = 25
-      Caption = 'Send with Graph Api'
-      TabOrder = 0
-      OnClick = btnSendWithGraphApiClick
-    end
-    object btnSendCloudPack: TButton
-      Left = 10
-      Top = 55
-      Width = 137
-      Height = 25
-      Caption = 'Send with Cloudpack'
-      TabOrder = 1
-      OnClick = btnSendCloudPackClick
-    end
+    OnClick = btnSendCloudPackClick
+  end
+  object txtSharedMail: TEdit
+    Left = 80
+    Top = 37
+    Width = 200
+    Height = 23
+    TabOrder = 8
   end
 end
