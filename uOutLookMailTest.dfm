@@ -62,6 +62,7 @@ object OutLookAzureTest: TOutLookAzureTest
     Logging = True
     Authentication.CallBackURL = 'http://localhost:8000'
     OnAuthenticated = OutlookMail1Authenticated
+    OnSendMessage = OutlookMail1SendMessage
     Mails = <>
     Folders = <>
   end
@@ -85,6 +86,7 @@ object OutLookAzureTest: TOutLookAzureTest
     Width = 217
     Height = 25
     Caption = 'Send with Graph Api shared mailbox'
+    Enabled = False
     TabOrder = 6
     OnClick = btnSendWithGraphAPIClick
   end
@@ -94,6 +96,7 @@ object OutLookAzureTest: TOutLookAzureTest
     Width = 217
     Height = 25
     Caption = 'Send with  CloudPack'
+    Enabled = False
     TabOrder = 7
     OnClick = btnSendCloudPackClick
   end

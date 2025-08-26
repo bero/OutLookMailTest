@@ -32,6 +32,8 @@ type
     procedure OutlookMail1Error(Sender: TObject; AError: Exception);
     procedure OutlookMail1Authenticated(Sender: TObject; var ATestTokens: Boolean);
     procedure OutlookMail1RequestComplete(Sender: TObject; const ARequestResult: TTMSFNCCloudBaseRequestResult);
+    procedure OutlookMail1SendMessage(Sender: TObject; const ARequestResult:
+        TTMSFNCCloudBaseRequestResult);
   private
     fInifile: TInifile;
     FCurrentAccessToken: string; // Store access token here
@@ -61,7 +63,6 @@ begin
   txtTo.Text := fInifile.ReadString('Mail', 'Receiver', '');
   OutlookMail1.Authentication.ClientID := fInifile.ReadString('Mail', 'ClientID', '');
   OutlookMail1.Authentication.Secret := fInifile.ReadString('Mail', 'Secret', '');
-  btnSendWithGraphAPI.Enabled := False;
 end;
 
 procedure TOutLookAzureTest.AuthenticateClick(Sender: TObject);
@@ -71,8 +72,18 @@ begin
 end;
 
 procedure TOutLookAzureTest.btnSendCloudPackClick(Sender: TObject);
+var
+  sRecipients: TStringList;
 begin
-//
+  sRecipients := TStringList.Create;
+  try
+    sRecipients.Add(txtFrom.Text);
+    OutlookMail1.SendMessage('Test Email from Delphi App (personal Mailbox)',
+                             '<h1>Hello!</h1><p>This email was sent from <b>' + txtFrom.Text + '</b> using FNC CloudPack.</p><p>Sent at ' + DateTimeToStr(Now) + '</p>',
+                             sRecipients, nil, nil, mtHTML);
+  finally
+    sRecipients.Free;
+  end;
 end;
 
 procedure TOutLookAzureTest.btnSendWithGraphAPIClick(Sender: TObject);
@@ -184,6 +195,7 @@ begin
   FCurrentAccessToken := OutlookMail1.Authentication.AccessToken;
   if OutlookMail1.Authentication.IsAccessTokenValid then
   begin
+    btnSendCloudPack.Enabled := True;
     btnSendWithGraphAPI.Enabled := True;
     OutlookMail1.GetUserInfo;
     MemoLog.Lines.Add('Authentication successful');
@@ -193,6 +205,7 @@ end;
 procedure TOutLookAzureTest.OutlookMail1Error(Sender: TObject; AError: Exception);
 begin
   MemoLog.Lines.Add('Authentication Error: ' + AError.Message);
+    btnSendCloudPack.Enabled := False;
   btnSendWithGraphAPI.Enabled := False;
 end;
 
@@ -221,6 +234,15 @@ begin
       JSONValue.Free;
     end;
   end;
+end;
+
+procedure TOutLookAzureTest.OutlookMail1SendMessage(Sender: TObject; const
+    ARequestResult: TTMSFNCCloudBaseRequestResult);
+begin
+  if ARequestResult.Success then
+    MemoLog.Lines.Add('Email send OK')
+  else
+    MemoLog.Lines.Add('Email failure: ' + ARequestResult.ToString);
 end;
 
 end.
