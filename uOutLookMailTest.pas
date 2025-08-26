@@ -9,8 +9,7 @@ uses
   VCL.TMSFNCCloudMicrosoft, VCL.TMSFNCCloudMicrosoftOutlookMail, // TMS CloudPack
   System.JSON.Writers,    // Required for TJSONFormat
   System.Net.HttpClient,  // For THTTPClient (defines THTTPClient and IHTTPResponse)
-  System.Net.URLClient,   // Used by THTTPClient for URI handling
-  System.Net.Mime;        // For TMediaType or general MIME types
+  System.Net.URLClient;   // Used by THTTPClient for URI handling
 
 type
   TOutLookAzureTest = class(TForm)
@@ -32,11 +31,12 @@ type
     procedure OutlookMail1Error(Sender: TObject; AError: Exception);
     procedure OutlookMail1Authenticated(Sender: TObject; var ATestTokens: Boolean);
     procedure OutlookMail1RequestComplete(Sender: TObject; const ARequestResult: TTMSFNCCloudBaseRequestResult);
-    procedure OutlookMail1SendMessage(Sender: TObject; const ARequestResult:
-        TTMSFNCCloudBaseRequestResult);
+    procedure OutlookMail1SendMessage(Sender: TObject; const ARequestResult: TTMSFNCCloudBaseRequestResult);
   private
     fInifile: TInifile;
     FCurrentAccessToken: string; // Store access token here
+    function ConvertAttachmentsToJSON(const CloudFiles: TTMSFNCCloudMicrosoftOutlookMailFiles): TJSONArray;
+    function PrepareAttachments(const FileList: string): TTMSFNCCloudMicrosoftOutlookMailFiles;
   end;
 
 var
@@ -48,7 +48,9 @@ implementation
 
 uses
   System.IOUtils,
-  System.NetConsts;
+  System.Net.Mime,
+  System.NetConsts,
+  System.NetEncoding;
 
 procedure TOutLookAzureTest.FormDestroy(Sender: TObject);
 begin
@@ -80,13 +82,85 @@ var
 begin
   sRecipients := TStringList.Create;
   AttachmentList := TStringList.Create;
-  oAttachmentFileList := TTMSFNCCloudMicrosoftOutlookMailFiles.Create(nil);
+  oAttachmentFileList := PrepareAttachments('C:\Attracs\BPL\AttracsComponentsXE12Athens.drc');
   try
     sRecipients.Add(txtFrom.Text);
-    var oAttachmentFile: TTMSFNCCloudMicrosoftOutlookMailFile;
-    var sFilePath: string;
+    OutlookMail1.SendMessage('Test Email from Delphi App (personal Mailbox)',
+                             '<h1>Hello!</h1><p>This email was sent from <b>' + txtFrom.Text + '</b> using FNC CloudPack.</p><p>Sent at ' + DateTimeToStr(Now) + '</p>',
+                             sRecipients, nil, nil, mtHTML, oAttachmentFileList);
+  finally
+    FreeAndNil(oAttachmentFileList);
+    FreeAndNil(AttachmentList);
+    FreeAndNil(sRecipients);
+  end;
+end;
 
-    AttachmentList.CommaText := 'C:\Attracs\BPL\AttracsComponentsXE12Athens.drc';
+function TOutLookAzureTest.ConvertAttachmentsToJSON(const CloudFiles: TTMSFNCCloudMicrosoftOutlookMailFiles): TJSONArray;
+const
+  // Basic MIME type map
+  MimeTypes: array[0..9] of record
+    Ext: string;
+    Mime: string;
+  end = (
+    (Ext: '.pdf'; Mime: 'application/pdf'),
+    (Ext: '.doc'; Mime: 'application/msword'),
+    (Ext: '.docx'; Mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+    (Ext: '.xls'; Mime: 'application/vnd.ms-excel'),
+    (Ext: '.xlsx'; Mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+    (Ext: '.jpg'; Mime: 'image/jpeg'),
+    (Ext: '.png'; Mime: 'image/png'),
+    (Ext: '.txt'; Mime: 'text/plain'),
+    (Ext: '.html'; Mime: 'text/html'),
+    (Ext: '.htm'; Mime: 'text/html')
+  );
+var
+  i, j: Integer;
+  AttachmentJSON: TJSONObject;
+  FileName, FileExt, MimeType: string;
+  FileContent: TBytes;
+begin
+  Result := TJSONArray.Create;
+
+  for i := 0 to CloudFiles.Count - 1 do
+  begin
+    FileName := ExtractFileName(CloudFiles[i].&File);
+    FileExt := LowerCase(ExtractFileExt(FileName));
+    MimeType := 'application/octet-stream'; // Default fallback
+
+    // Lookup MIME type
+    for j := Low(MimeTypes) to High(MimeTypes) do
+    begin
+      if MimeTypes[j].Ext = FileExt then
+      begin
+        MimeType := MimeTypes[j].Mime;
+        Break;
+      end;
+    end;
+
+    FileContent := TFile.ReadAllBytes(CloudFiles[i].&File);
+    AttachmentJSON := TJSONObject.Create;
+    AttachmentJSON.AddPair('@odata.type', '#microsoft.graph.fileAttachment');
+    AttachmentJSON.AddPair('name', FileName);
+    AttachmentJSON.AddPair('contentType', MimeType);
+    AttachmentJSON.AddPair('contentBytes', TNetEncoding.Base64.EncodeBytesToString(FileContent));
+
+    Result.AddElement(AttachmentJSON);
+  end;
+end;
+
+function TOutLookAzureTest.PrepareAttachments(const FileList: string): TTMSFNCCloudMicrosoftOutlookMailFiles;
+const
+  MaxFileSize = 3 * 1024 * 1024; // 3 MB
+var
+  AttachmentList: TStringList;
+  oAttachmentFileList: TTMSFNCCloudMicrosoftOutlookMailFiles;
+  sFilePath: string;
+  oAttachmentFile: TTMSFNCCloudMicrosoftOutlookMailFile;
+begin
+  AttachmentList := TStringList.Create;
+  oAttachmentFileList := TTMSFNCCloudMicrosoftOutlookMailFiles.Create(nil);
+  try
+    AttachmentList.CommaText := FileList;
     for sFilePath in AttachmentList do
     begin
       if not FileExists(sFilePath) then
@@ -98,14 +172,9 @@ begin
       oAttachmentFile := oAttachmentFileList.Add;
       oAttachmentFile.&File := sFilePath;
     end;
-
-    OutlookMail1.SendMessage('Test Email from Delphi App (personal Mailbox)',
-                             '<h1>Hello!</h1><p>This email was sent from <b>' + txtFrom.Text + '</b> using FNC CloudPack.</p><p>Sent at ' + DateTimeToStr(Now) + '</p>',
-                             sRecipients, nil, nil, mtHTML, oAttachmentFileList);
+    Result := oAttachmentFileList;
   finally
-    FreeAndNil(oAttachmentFileList);
-    FreeAndNil(AttachmentList);
-    FreeAndNil(sRecipients);
+    AttachmentList.Free;
   end;
 end;
 
@@ -166,6 +235,14 @@ begin
     MessageObject.AddPair('body', BodyObject);
     BodyObject.AddPair('contentType', 'HTML');
     BodyObject.AddPair('content', '<h1>Hello!</h1><p>This email was sent from <b>' + txtSharedMail.Text + '</b> using Microsoft Graph API.</p><p>Sent at ' + DateTimeToStr(Now) + '</p>');
+
+    var AttachmentFiles := PrepareAttachments('C:\Attracs\BPL\AttracsComponentsXE12Athens.drc');
+    try
+      var AttachmentsArray := ConvertAttachmentsToJSON(AttachmentFiles);
+      MessageObject.AddPair('attachments', AttachmentsArray);
+    finally
+      AttachmentFiles.Free;
+    end;
 
     try
       GraphFullURL := 'https://graph.microsoft.com/v1.0/users/' + txtSharedMail.Text + '/sendMail';

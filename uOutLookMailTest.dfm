@@ -51,6 +51,7 @@ object OutLookAzureTest: TOutLookAzureTest
     Align = alRight
     Lines.Strings = (
       '')
+    ScrollBars = ssBoth
     TabOrder = 1
   end
   object OutlookMail1: TTMSFNCCloudMicrosoftOutlookMail
